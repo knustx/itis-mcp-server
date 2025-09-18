@@ -9,12 +9,14 @@ This MCP server provides access to the ITIS database, which contains taxonomic i
 ## Features
 
 - **Search by Scientific Name**: Find organisms by their scientific names
+- **Search by Vernacular/Common Names**: Find organisms by their common names (e.g., "human", "dog", "oak tree")
 - **Search by TSN**: Look up organisms by their Taxonomic Serial Number
 - **Search by Kingdom**: Find organisms within specific kingdoms
 - **Search by Taxonomic Rank**: Search for organisms of specific ranks
 - **Autocomplete Search**: Get suggestions for partial scientific names
 - **Hierarchical Data**: Retrieve complete taxonomic hierarchies
 - **General SOLR Search**: Perform flexible searches with custom SOLR queries
+- **Random Species Discovery**: Get random species from any taxonomic group with flexible filtering
 - **Statistics**: Get database statistics
 
 ## Installation
@@ -118,14 +120,34 @@ Get taxonomic hierarchy for a TSN.
 **Parameters:**
 - `tsn` (string, required): TSN to get hierarchy for
 
-#### 7. `autocomplete_search`
+#### 7. `search_by_vernacular_name`
+Search for organisms by their common/vernacular names.
+
+**Parameters:**
+- `vernacularName` (string, required): Common/vernacular name to search for
+- `rows` (number): Number of results to return
+- `start` (number): Starting index for pagination
+
+#### 8. `autocomplete_search`
 Autocomplete search for partial names.
 
 **Parameters:**
 - `partialName` (string, required): Partial scientific name
 - `rows` (number): Number of results to return
 
-#### 8. `get_statistics`
+#### 9. `get_random_species`
+Get random species with optional taxonomic filters.
+
+**Parameters:**
+- `kingdom` (string): Kingdom filter (e.g., "Animalia", "Plantae")
+- `class` (string): Class filter (e.g., "Mammalia", "Aves")
+- `family` (string): Family filter
+- `count` (number): Number of species to return (max: 10)
+- `requireVernacular` (boolean): Only return species with common names
+
+**Note:** This tool is designed to work with the `random_creature_discovery` prompt, which intelligently interprets free-form requests like "big cats" or "sea birds" and determines the appropriate taxonomic filters.
+
+#### 10. `get_statistics`
 Get database statistics.
 
 **Parameters:** None
@@ -134,12 +156,22 @@ Get database statistics.
 
 Here are some example queries you can use:
 
-### Search for Humans
+### Search for Humans by Scientific Name
 ```json
 {
   "tool": "search_by_scientific_name",
   "arguments": {
     "name": "Homo sapiens"
+  }
+}
+```
+
+### Search for Cougars by Common Name
+```json
+{
+  "tool": "search_by_vernacular_name",
+  "arguments": {
+    "vernacularName": "cougar"
   }
 }
 ```
@@ -161,6 +193,68 @@ Here are some example queries you can use:
   "tool": "autocomplete_search",
   "arguments": {
     "partialName": "Quercus"
+  }
+}
+```
+
+### Get Random Birds
+```json
+{
+  "tool": "get_random_species",
+  "arguments": {
+    "kingdom": "Animalia",
+    "class": "Aves",
+    "count": 3,
+    "requireVernacular": true
+  }
+}
+```
+
+### Get Random Mammals from Carnivora
+```json
+{
+  "tool": "get_random_species",
+  "arguments": {
+    "kingdom": "Animalia",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "count": 2,
+    "requireVernacular": true
+  }
+}
+```
+
+### Intelligent Creature Discovery
+```json
+{
+  "prompt": "random_creature_discovery",
+  "arguments": {
+    "creature_type": "big cats",
+    "count": 3
+  }
+}
+```
+
+### Discover Sea Birds
+```json
+{
+  "prompt": "random_creature_discovery",
+  "arguments": {
+    "creature_type": "sea birds",
+    "count": 2,
+    "focus_area": "diving birds"
+  }
+}
+```
+
+### Get Random Plants
+```json
+{
+  "tool": "get_random_species",
+  "arguments": {
+    "kingdom": "Plantae",
+    "count": 2,
+    "requireVernacular": true
   }
 }
 ```

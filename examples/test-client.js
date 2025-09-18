@@ -71,8 +71,20 @@ async function runTests() {
     console.log(`   Total records in ITIS: ${statsResult.response.numFound.toLocaleString()}`);
     console.log('');
     
-    // Test 7: Custom SOLR query
-    console.log('7. Custom SOLR query for tigers...');
+    // Test 7: Vernacular name search
+    console.log('7. Searching by vernacular name "cougar"...');
+    const vernacularResult = await client.searchByVernacularName('cougar', { rows: 3 });
+    console.log(`   Found ${vernacularResult.response.numFound} results for "cougar"`);
+    vernacularResult.response.docs.forEach(doc => {
+      console.log(`   - ${doc.nameWInd} (TSN: ${doc.tsn})`);
+      if (doc.vernacular && doc.vernacular.length > 0) {
+        console.log(`     Common names: ${doc.vernacular.join(', ')}`);
+      }
+    });
+    console.log('');
+    
+    // Test 8: Custom SOLR query
+    console.log('8. Custom SOLR query for tigers...');
     const tigerResult = await client.search({
       query: 'nameWInd:*tiger* AND kingdom:Animalia',
       rows: 3,
@@ -81,6 +93,41 @@ async function runTests() {
     console.log(`   Found ${tigerResult.response.numFound} tiger-related results`);
     tigerResult.response.docs.forEach(doc => {
       console.log(`   - ${doc.nameWInd} (TSN: ${doc.tsn})`);
+    });
+    
+    // Test 9: Random species discovery
+    console.log('9. Getting a random bird...');
+    const randomBird = await client.getRandomSpecies({
+      kingdom: 'Animalia',
+      class: 'Aves',
+      count: 1,
+      requireVernacular: true
+    });
+    if (randomBird.response.docs.length > 0) {
+      const bird = randomBird.response.docs[0];
+      console.log(`   Random bird: ${bird.nameWInd} (TSN: ${bird.tsn})`);
+      if (bird.vernacular && bird.vernacular.length > 0) {
+        const firstCommon = bird.vernacular[0].split('$')[1] || 'N/A';
+        console.log(`   Common name: ${firstCommon}`);
+      }
+    }
+    console.log('');
+    
+    // Test 10: Random plants from rose family
+    console.log('10. Getting random plants from Rosaceae (rose family)...');
+    const randomPlants = await client.getRandomSpecies({
+      kingdom: 'Plantae',
+      family: 'Rosaceae',
+      count: 2,
+      requireVernacular: true
+    });
+    console.log(`   Found ${randomPlants.response.docs.length} random rose family plants:`);
+    randomPlants.response.docs.forEach(plant => {
+      console.log(`   - ${plant.nameWInd} (TSN: ${plant.tsn})`);
+      if (plant.vernacular && plant.vernacular.length > 0) {
+        const firstCommon = plant.vernacular[0].split('$')[1] || 'N/A';
+        console.log(`     Common name: ${firstCommon}`);
+      }
     });
     
     console.log('\\n✅ All tests completed successfully!');

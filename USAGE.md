@@ -71,7 +71,23 @@ Get basic database statistics.
 
 **Returns:** Total number of records in the ITIS database.
 
-### 9. Taxonomy Explorer (`explore_taxonomy`)
+### 9. Vernacular Name Search (`search_by_vernacular_name`)
+Find organisms by their common/vernacular names.
+
+**Example:** Search for "dog" returns Canis lupus and related species.
+
+### 10. Random Species Discovery (`get_random_species`)
+Get random species with flexible taxonomic filtering.
+
+**Parameters:**
+- `kingdom`: Filter by kingdom (e.g., "Animalia", "Plantae")
+- `class`: Filter by class (e.g., "Mammalia", "Aves")
+- `order`: Filter by order (e.g., "Carnivora", "Primates")
+- `family`: Filter by family (e.g., "Felidae", "Canidae")
+- `count`: Number of random species to return (default: 1, max: 10)
+- `requireVernacular`: Only return species with common names
+
+### 11. Taxonomy Explorer (`explore_taxonomy`)
 Explore related organisms at different taxonomic levels.
 
 **Levels:**
@@ -79,6 +95,8 @@ Explore related organisms at different taxonomic levels.
 - `family`: Other species in the same family  
 - `order`: Other species in the same order
 - `class`: Other species in the same class
+
+**Note:** Results include vernacular names where available.
 
 ## Example Queries
 
@@ -124,6 +142,43 @@ Explore related organisms at different taxonomic levels.
   "arguments": {
     "name": "Quercus",
     "rows": 20
+  }
+}
+```
+
+### Search for Dogs by Common Name
+```json
+{
+  "tool": "search_by_vernacular_name",
+  "arguments": {
+    "vernacularName": "dog",
+    "rows": 10
+  }
+}
+```
+
+### Get Random Birds
+```json
+{
+  "tool": "get_random_species",
+  "arguments": {
+    "kingdom": "Animalia",
+    "class": "Aves",
+    "count": 3,
+    "requireVernacular": true
+  }
+}
+```
+
+### Get Random Plants from Rose Family
+```json
+{
+  "tool": "get_random_species",
+  "arguments": {
+    "kingdom": "Plantae",
+    "family": "Rosaceae",
+    "count": 2,
+    "requireVernacular": true
   }
 }
 ```

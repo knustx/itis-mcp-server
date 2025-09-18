@@ -5,7 +5,7 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import { ITISClient } from './itis-client.js';
+import { ITISClient, processVernacularNames } from './itis-client.js';
 
 // Define the tools
 export const tools: Tool[] = [
@@ -165,6 +165,28 @@ export const tools: Tool[] = [
     },
   },
   {
+    name: 'search_by_vernacular_name',
+    description: 'Search for organisms by their common/vernacular names in ITIS database.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        vernacularName: {
+          type: 'string',
+          description: 'Common/vernacular name to search for (e.g., "human", "dog", "oak tree")',
+        },
+        rows: {
+          type: 'number',
+          description: 'Number of results to return (default: 10)',
+        },
+        start: {
+          type: 'number',
+          description: 'Starting index for pagination (default: 0)',
+        },
+      },
+      required: ['vernacularName'],
+    },
+  },
+  {
     name: 'explore_taxonomy',
     description: 'Explore taxonomic relationships by finding related organisms at different taxonomic levels.',
     inputSchema: {
@@ -185,6 +207,51 @@ export const tools: Tool[] = [
         },
       },
       required: ['scientificName', 'level'],
+    },
+  },
+  {
+    name: 'get_random_species',
+    description: 'Get random species from ITIS database with optional taxonomic filters.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kingdom: {
+          type: 'string',
+          description: 'Kingdom filter (e.g., "Animalia", "Plantae", "Fungi")',
+        },
+        phylum: {
+          type: 'string',
+          description: 'Phylum filter (e.g., "Chordata", "Arthropoda")',
+        },
+        class: {
+          type: 'string',
+          description: 'Class filter (e.g., "Mammalia", "Aves", "Reptilia")',
+        },
+        order: {
+          type: 'string',
+          description: 'Order filter (e.g., "Carnivora", "Primates")',
+        },
+        family: {
+          type: 'string',
+          description: 'Family filter (e.g., "Felidae", "Canidae")',
+        },
+        genus: {
+          type: 'string',
+          description: 'Genus filter (e.g., "Panthera", "Canis")',
+        },
+        count: {
+          type: 'number',
+          description: 'Number of random species to return (default: 1, max: 10)',
+        },
+        requireVernacular: {
+          type: 'boolean',
+          description: 'Only return species that have common names (default: false)',
+        },
+        vernacularLanguage: {
+          type: 'string',
+          description: 'Language for vernacular names (default: "English"). Other options: "French", "Spanish", etc.',
+        },
+      },
     },
   },
 ];
@@ -343,6 +410,32 @@ export function setupToolHandlers(server: Server, itisClient: ITISClient) {
           };
         }
 
+        case 'search_by_vernacular_name': {
+          const { vernacularName, rows, start } = args as any;
+          const result = await itisClient.searchByVernacularName(vernacularName, { rows, start });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  searchTerm: vernacularName,
+                  searchType: 'vernacular/common name',
+                  totalResults: result.response.numFound,
+                  start: result.response.start,
+                  results: result.response.docs.map((doc: any) => ({
+                    tsn: doc.tsn,
+                    scientificName: doc.nameWInd,
+                    kingdom: doc.kingdom,
+                    rank: doc.rank,
+                    commonNames: processVernacularNames(doc.vernacular, 'English'),
+                    usage: doc.usage,
+                  })),
+                }, null, 2),
+              },
+            ],
+          };
+        }
+
         case 'explore_taxonomy': {
           const { scientificName, level, rows } = args as any;
           
@@ -446,8 +539,49 @@ export function setupToolHandlers(server: Server, itisClient: ITISClient) {
                       name: doc.nameWInd,
                       kingdom: doc.kingdom,
                       rank: doc.rank,
+                      commonNames: processVernacularNames(doc.vernacular, 'English'),
+                      usage: doc.usage,
                     })),
                   },
+                }, null, 2),
+              },
+            ],
+          };
+        }
+
+        case 'get_random_species': {
+          const args = request.params.arguments as any;
+          const { count = 1, requireVernacular = false, vernacularLanguage = 'English', ...filters } = args;
+          
+          // Limit count to reasonable maximum
+          const limitedCount = Math.min(count, 10);
+          
+          const result = await itisClient.getRandomSpecies({
+            ...filters,
+            count: limitedCount,
+            requireVernacular,
+            vernacularLanguage
+          });
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  searchType: 'random species',
+                  filters: filters,
+                  requireVernacular,
+                  vernacularLanguage,
+                  totalPossible: result.response.numFound,
+                  results: result.response.docs.map((doc: any) => ({
+                    tsn: doc.tsn,
+                    scientificName: doc.nameWInd,
+                    kingdom: doc.kingdom,
+                    rank: doc.rank,
+                    commonNames: processVernacularNames(doc.vernacular, vernacularLanguage),
+                    hierarchy: doc.hierarchySoFarWRanks?.[0] || '',
+                    usage: doc.usage,
+                  })),
                 }, null, 2),
               },
             ],
