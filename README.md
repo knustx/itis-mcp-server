@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for interacting with the ITIS (Integrated Taxonomic Information System) database via their SOLR API.
 
+<a href="https://glama.ai/mcp/servers/@knustx/itis-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@knustx/itis-mcp-server/badge" alt="ITIS Server MCP server" />
+</a>
+
 ## Overview
 
 This MCP server provides access to the ITIS database, which contains taxonomic information for hundreds of thousands of species. It uses the ITIS SOLR API to perform searches and retrieve taxonomic data.
