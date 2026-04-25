@@ -98,6 +98,61 @@ export const prompts: Prompt[] = [
       }
     ]
   },
+  {
+    name: 'animal_relatives',
+    description: 'Use this when the user asks "what are the relatives of X?" or "what is related to Y?"',
+    arguments: [
+      {
+        name: 'animal_name',
+        description: 'Common or scientific name of the animal/plant to find relatives for',
+        required: true
+      }
+    ]
+  },
+  {
+    name: 'species_profile',
+    description: 'Use this when the user asks "tell me about X" or "give me facts about Y"',
+    arguments: [
+      {
+        name: 'animal_name',
+        description: 'Common or scientific name of the organism to profile',
+        required: true
+      }
+    ]
+  },
+  {
+    name: 'whats_in_this_group',
+    description: 'Use this when the user asks "what is in the cat family" or "what animals are primates?"',
+    arguments: [
+      {
+        name: 'group_name',
+        description: 'Name of the taxonomic group (e.g. Felidae, Primates, cat family)',
+        required: true
+      }
+    ]
+  },
+  {
+    name: 'where_does_it_live',
+    description: 'Use this when the user asks "where do polar bears live?" or similar geographic questions',
+    arguments: [
+      {
+        name: 'animal_name',
+        description: 'Common or scientific name of the animal/plant',
+        required: true
+      }
+    ]
+  },
+  {
+    name: 'compare_animals',
+    description: 'Use this when the user asks "how are dogs and wolves related?" or "what is the difference between X and Y?"',
+    arguments: [
+      {
+        name: 'animal_list',
+        description: 'Comma-separated list of common or scientific names to compare (e.g. "dog, wolf", "lion, tiger")',
+        required: true
+      }
+    ]
+  }
 ];
 
 export function setupPromptHandlers(server: Server) {
@@ -323,6 +378,98 @@ If user asks for "big cats":
 4. Present results explaining how each species fits the "big cat" concept
 
 Make this an intelligent, educational discovery process that adapts to any creature type request!`
+              }
+            }
+          ]
+        };
+      }
+
+      case 'animal_relatives': {
+        const animalName = args?.animal_name || 'Elephant';
+        return {
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: `I want to know about the relatives of ${animalName}. Please:
+1. Use the find_relatives tool with name="${animalName}" and level="family" to get its close relatives.
+2. If there are too many or too few, try level="order" or level="siblings".
+3. Present the results in a friendly, easy-to-read way for a non-scientist. Group them logically and highlight interesting or well-known relatives.`
+              }
+            }
+          ]
+        };
+      }
+
+      case 'species_profile': {
+        const animalName = args?.animal_name || 'Komodo Dragon';
+        return {
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: `Tell me all about the ${animalName}. Please:
+1. Use the get_full_species_profile tool to get comprehensive info on this organism.
+2. Present a friendly, well-formatted profile that includes:
+   - Its scientific name and common names
+   - Where it lives (based on geographic divisions)
+   - Its taxonomic classification (what kind of animal/plant it is)
+   - Any interesting synonyms (old names it used to have)`
+              }
+            }
+          ]
+        };
+      }
+
+      case 'whats_in_this_group': {
+        const groupName = args?.group_name || 'Felidae';
+        return {
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: `What species are in the group ${groupName}? Please:
+1. Use the get_children tool to find species in this group.
+2. If that fails because the name is too vague, try search_by_common_name to find a representative, look at its hierarchy to find the formal group name, and then use get_children.
+3. List the most interesting or well-known species in this group, using common names wherever possible.`
+              }
+            }
+          ]
+        };
+      }
+
+      case 'where_does_it_live': {
+        const animalName = args?.animal_name || 'Polar Bear';
+        return {
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: `Where does the ${animalName} live? Please:
+1. Use the get_geographic_info tool to find its geographic divisions and jurisdictions.
+2. Present the locations in a clear, conversational list.`
+              }
+            }
+          ]
+        };
+      }
+
+      case 'compare_animals': {
+        const animalList = args?.animal_list || 'dog, wolf';
+        return {
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: `How are these animals related: ${animalList}? Please:
+1. For each animal, use get_full_species_profile to get its complete hierarchy.
+2. Compare their hierarchies to find exactly where they branch apart (e.g. they are in the same Family, but different Genera).
+3. Explain their evolutionary relationship in simple terms that a layperson would understand.`
               }
             }
           ]

@@ -11,7 +11,7 @@ import { ITISClient, processVernacularNames } from './itis-client.js';
 export const tools: Tool[] = [
   {
     name: 'search_itis',
-    description: 'Search ITIS database using SOLR queries. Supports general search with flexible query parameters.',
+    description: 'General search for the ITIS database using SOLR queries. Use this for complex or specific queries that other tools cannot handle.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -46,7 +46,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'search_by_scientific_name',
-    description: 'Search for organisms by their scientific name in ITIS database.',
+    description: 'Find organisms by their exact scientific name (e.g., "Homo sapiens", "Quercus"). Use this when the user asks about a specific scientific name.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -68,7 +68,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'search_by_tsn',
-    description: 'Search for organisms by their Taxonomic Serial Number (TSN) in ITIS database.',
+    description: 'Find organisms by their Taxonomic Serial Number (TSN) in the ITIS database. Use this when you already have a TSN.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -82,7 +82,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'search_by_kingdom',
-    description: 'Search for organisms within a specific kingdom in ITIS database.',
+    description: 'Find all organisms belonging to a major kingdom of life. Use this when someone asks about \'all animals\', \'all plants\', \'all fungi\', etc. Kingdoms include: Animalia (animals), Plantae (plants), Fungi (mushrooms/molds), Bacteria, Chromista (algae), Protozoa, and Archaea.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -104,7 +104,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'search_by_rank',
-    description: 'Search for organisms by their taxonomic rank in ITIS database.',
+    description: 'Search for organisms by their taxonomic rank (e.g., Species, Genus, Family, Order, Class, Phylum, Kingdom).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -126,7 +126,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'get_hierarchy',
-    description: 'Get the complete taxonomic hierarchy for a given TSN.',
+    description: 'Get the complete taxonomic hierarchy (from Kingdom down to Species) for a given TSN.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -140,7 +140,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'autocomplete_search',
-    description: 'Search for organisms with autocomplete functionality using partial names.',
+    description: 'Search for organisms with partial names. Useful if you are unsure of the spelling.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -165,8 +165,30 @@ export const tools: Tool[] = [
     },
   },
   {
+    name: 'search_by_common_name',
+    description: 'Find organisms by their everyday common names (e.g., "dog", "elephant", "oak tree", "komodo dragon"). This is usually what lay users want when they ask about an animal or plant.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        commonName: {
+          type: 'string',
+          description: 'Common/vernacular name to search for (e.g., "human", "dog", "oak tree")',
+        },
+        rows: {
+          type: 'number',
+          description: 'Number of results to return (default: 10)',
+        },
+        start: {
+          type: 'number',
+          description: 'Starting index for pagination (default: 0)',
+        },
+      },
+      required: ['commonName'],
+    },
+  },
+  {
     name: 'search_by_vernacular_name',
-    description: 'Search for organisms by their common/vernacular names in ITIS database.',
+    description: 'Legacy alias for search_by_common_name.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -188,7 +210,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'explore_taxonomy',
-    description: 'Explore taxonomic relationships by finding related organisms at different taxonomic levels.',
+    description: 'Explore taxonomic relationships by finding related organisms at different taxonomic levels (siblings, family, order, class).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -211,7 +233,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'get_random_species',
-    description: 'Get random species from ITIS database with optional taxonomic filters.',
+    description: 'Get random species from ITIS database with optional taxonomic filters. Useful for "tell me about a random bird" requests.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -252,6 +274,75 @@ export const tools: Tool[] = [
           description: 'Language for vernacular names (default: "English"). Other options: "French", "Spanish", etc.',
         },
       },
+    },
+  },
+  {
+    name: 'find_relatives',
+    description: 'Show me relatives of a specific animal or plant. You can pass in a common name (like "Elephant") or scientific name, and it will return related species at your chosen taxonomic depth (genus, family, order, class).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Common or scientific name of the organism (e.g., "Elephant", "Tiger", "Homo sapiens")',
+        },
+        level: {
+          type: 'string',
+          description: 'How distant of relatives? "siblings" (same genus), "family" (same family), "order" (same order), "class" (same class)',
+          enum: ['siblings', 'family', 'order', 'class']
+        },
+        rows: {
+          type: 'number',
+          description: 'Number of relatives to return (default: 10)',
+        },
+      },
+      required: ['name', 'level'],
+    },
+  },
+  {
+    name: 'get_children',
+    description: 'What species are in the cat family? Pass in a higher taxonomic group name (like "Felidae", "Primates", "Canidae") and this returns the child species contained within it.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taxonomicGroup: {
+          type: 'string',
+          description: 'Higher taxonomic group name (e.g., "Felidae", "Primates", "Ursidae")',
+        },
+        rows: {
+          type: 'number',
+          description: 'Number of species to return (default: 20)',
+        },
+      },
+      required: ['taxonomicGroup'],
+    },
+  },
+  {
+    name: 'get_geographic_info',
+    description: 'Where does it live? Get geographic divisions and jurisdictions where a species is found. Accepts common or scientific names.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Common or scientific name of the organism (e.g., "Polar Bear", "Puma concolor")',
+        },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'get_full_species_profile',
+    description: 'Tell me everything about the Komodo Dragon! Gets a comprehensive profile including hierarchy, geography, common names, and synonyms in one go.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Common or scientific name of the organism (e.g., "Komodo Dragon", "Varanus komodoensis")',
+        },
+      },
+      required: ['name'],
     },
   },
 ];
@@ -427,7 +518,7 @@ export function setupToolHandlers(server: Server, itisClient: ITISClient) {
                     scientificName: doc.nameWInd,
                     kingdom: doc.kingdom,
                     rank: doc.rank,
-                    commonNames: processVernacularNames(doc.vernacular, 'English'),
+                    commonNames: processVernacularNames(doc.vernacular, itisClient.language),
                     usage: doc.usage,
                   })),
                 }, null, 2),
@@ -539,7 +630,7 @@ export function setupToolHandlers(server: Server, itisClient: ITISClient) {
                       name: doc.nameWInd,
                       kingdom: doc.kingdom,
                       rank: doc.rank,
-                      commonNames: processVernacularNames(doc.vernacular, 'English'),
+                      commonNames: processVernacularNames(doc.vernacular, itisClient.language),
                       usage: doc.usage,
                     })),
                   },
@@ -582,6 +673,202 @@ export function setupToolHandlers(server: Server, itisClient: ITISClient) {
                     hierarchy: doc.hierarchySoFarWRanks?.[0] || '',
                     usage: doc.usage,
                   })),
+                }, null, 2),
+              },
+            ],
+          };
+        }
+
+        case 'search_by_common_name': {
+          const { commonName, rows, start } = args as any;
+          const result = await itisClient.searchByVernacularName(commonName, { rows, start });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  searchTerm: commonName,
+                  searchType: 'common name',
+                  totalResults: result.response.numFound,
+                  start: result.response.start,
+                  results: result.response.docs.map((doc: any) => ({
+                    tsn: doc.tsn,
+                    scientificName: doc.nameWInd,
+                    kingdom: doc.kingdom,
+                    rank: doc.rank,
+                    commonNames: processVernacularNames(doc.vernacular, itisClient.language),
+                    usage: doc.usage,
+                  })),
+                }, null, 2),
+              },
+            ],
+          };
+        }
+
+        case 'find_relatives': {
+          const { name, level, rows } = args as any;
+          const resolved = await itisClient.resolveNameToTSN(name);
+          
+          if (!resolved) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({ error: `Could not find organism: ${name}` }, null, 2),
+                },
+              ],
+            };
+          }
+
+          // Now use explore_taxonomy logic but with the resolved scientific name
+          const exploreArgs = { scientificName: resolved.name, level, rows };
+          // Call the explore_taxonomy case handler essentially by making a recursive-like call 
+          // or just repeating the logic here. Given it's a switch, we'll implement the query.
+          const target = resolved.record;
+          let searchQuery = '';
+          let description = '';
+          
+          switch (level) {
+            case 'siblings':
+              if (target.unit1) {
+                searchQuery = `unit1:"${target.unit1}" AND rank:Species`;
+                description = `Other species in genus ${target.unit1}`;
+              }
+              break;
+            case 'family':
+              if (target.hierarchySoFarWRanks && target.hierarchySoFarWRanks[0]) {
+                const familyMatch = target.hierarchySoFarWRanks[0].match(/Family:([^$]+)/);
+                if (familyMatch) {
+                  searchQuery = `hierarchySoFarWRanks:*Family\\:${familyMatch[1]}* AND rank:Species`;
+                  description = `Other species in family ${familyMatch[1]}`;
+                }
+              }
+              break;
+            case 'order':
+              if (target.hierarchySoFarWRanks && target.hierarchySoFarWRanks[0]) {
+                const orderMatch = target.hierarchySoFarWRanks[0].match(/Order:([^$]+)/);
+                if (orderMatch) {
+                  searchQuery = `hierarchySoFarWRanks:*Order\\:${orderMatch[1]}* AND rank:Species`;
+                  description = `Other species in order ${orderMatch[1]}`;
+                }
+              }
+              break;
+            case 'class':
+              if (target.hierarchySoFarWRanks && target.hierarchySoFarWRanks[0]) {
+                const classMatch = target.hierarchySoFarWRanks[0].match(/Class:([^$]+)/);
+                if (classMatch) {
+                  searchQuery = `hierarchySoFarWRanks:*Class\\:${classMatch[1]}* AND rank:Species`;
+                  description = `Other species in class ${classMatch[1]}`;
+                }
+              }
+              break;
+          }
+
+          if (!searchQuery) {
+            return {
+              content: [{ type: 'text', text: JSON.stringify({ error: `Unable to find taxonomic information for level: ${level}`, target: resolved.name }, null, 2) }]
+            };
+          }
+
+          const relatedResult = await itisClient.search({ query: searchQuery, rows: rows || 10, sort: 'nameWInd asc' });
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  target: { name: target.nameWInd, tsn: target.tsn, commonNames: processVernacularNames(target.vernacular, itisClient.language) },
+                  exploration: {
+                    level,
+                    description,
+                    totalResults: relatedResult.response.numFound,
+                    results: relatedResult.response.docs.map((doc: any) => ({
+                      tsn: doc.tsn,
+                      name: doc.nameWInd,
+                      commonNames: processVernacularNames(doc.vernacular, itisClient.language),
+                    })),
+                  },
+                }, null, 2),
+              },
+            ],
+          };
+        }
+
+        case 'get_children': {
+          const { taxonomicGroup, rows } = args as any;
+          try {
+            const result = await itisClient.getChildSpecies(taxonomicGroup, { rows });
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    group: taxonomicGroup,
+                    totalSpecies: result.response.numFound,
+                    results: result.response.docs.map((doc: any) => ({
+                      tsn: doc.tsn,
+                      scientificName: doc.nameWInd,
+                      commonNames: processVernacularNames(doc.vernacular, itisClient.language)
+                    }))
+                  }, null, 2),
+                },
+              ],
+            };
+          } catch (e: any) {
+             return {
+              content: [{ type: 'text', text: JSON.stringify({ error: e.message }, null, 2) }]
+            };
+          }
+        }
+
+        case 'get_geographic_info': {
+          const { name } = args as any;
+          const resolved = await itisClient.resolveNameToTSN(name);
+          if (!resolved) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: `Could not find organism: ${name}` }, null, 2) }] };
+          }
+          const geoInfo = await itisClient.getGeographicDivisions(resolved.tsn);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  name: resolved.name,
+                  tsn: resolved.tsn,
+                  geographicDivisions: geoInfo.geographicDivisions || []
+                }, null, 2),
+              },
+            ],
+          };
+        }
+
+        case 'get_full_species_profile': {
+          const { name } = args as any;
+          const resolved = await itisClient.resolveNameToTSN(name);
+          if (!resolved) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: `Could not find organism: ${name}` }, null, 2) }] };
+          }
+          
+          const tsn = resolved.tsn;
+          const [geo, synonyms, fullHierarchy] = await Promise.all([
+            itisClient.getGeographicDivisions(tsn),
+            itisClient.getSynonyms(tsn),
+            itisClient.getFullHierarchyFromTSN(tsn)
+          ]);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  scientificName: resolved.name,
+                  tsn: tsn,
+                  rank: resolved.record.rank,
+                  commonNames: processVernacularNames(resolved.record.vernacular, itisClient.language),
+                  hierarchy: fullHierarchy.hierarchyList || [],
+                  geographicDivisions: geo.geographicDivisions || [],
+                  synonyms: synonyms.synonyms || [],
+                  solrRecord: resolved.record
                 }, null, 2),
               },
             ],

@@ -2,7 +2,7 @@
   "mcpServers": {
     "itis": {
       "command": "node",
-      "args": ["C:\\Users\\Bucee\\projects\\itis-mcp\\dist\\index.js"],
+      "args": ["<PATH_TO_YOUR_PROJECT>/dist/index.js"],
       "description": "ITIS (Integrated Taxonomic Information System) MCP Server - Access to taxonomic data via SOLR API"
     }
   }

@@ -8,6 +8,7 @@ This MCP server provides access to the ITIS database, which contains taxonomic i
 
 ## Features
 
+- **Natural Language Answers**: Use specialized tools and prompts to answer everyday questions like "where do polar bears live?" or "what's related to the elephant?"
 - **Search by Scientific Name**: Find organisms by their scientific names
 - **Search by Vernacular/Common Names**: Find organisms by their common names (e.g., "human", "dog", "oak tree")
 - **Search by TSN**: Look up organisms by their Taxonomic Serial Number
@@ -15,21 +16,10 @@ This MCP server provides access to the ITIS database, which contains taxonomic i
 - **Search by Taxonomic Rank**: Search for organisms of specific ranks
 - **Autocomplete Search**: Get suggestions for partial scientific names
 - **Hierarchical Data**: Retrieve complete taxonomic hierarchies
+- **Geographic Information**: See where species are found
 - **General SOLR Search**: Perform flexible searches with custom SOLR queries
 - **Random Species Discovery**: Get random species from any taxonomic group with flexible filtering
 - **Statistics**: Get database statistics
-
-## Installation
-
-1. Clone or download this repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Build the project:
-   ```bash
-   npm run build
-   ```
 
 ## Usage
 
@@ -46,6 +36,16 @@ For development:
 ```bash
 npm run dev
 ```
+
+### Natural Language Questions
+
+This server includes special prompts and tools to easily answer common layperson questions:
+
+- **"Tell me about the Komodo Dragon"** -> Uses the `species_profile` prompt and `get_full_species_profile` tool
+- **"Where do polar bears live?"** -> Uses the `where_does_it_live` prompt and `get_geographic_info` tool
+- **"What are the relatives of the Elephant?"** -> Uses the `animal_relatives` prompt and `find_relatives` tool
+- **"What species are in the cat family?"** -> Uses the `whats_in_this_group` prompt and `get_children` tool
+- **"How are dogs and wolves related?"** -> Uses the `compare_animals` prompt
 
 ### MCP Client Configuration
 
@@ -76,81 +76,47 @@ After building the project, add this configuration to your MCP client:
 #### 1. `search_itis`
 General SOLR search with flexible parameters.
 
-**Parameters:**
-- `query` (string): SOLR query string (e.g., "nameWInd:Homo*", "kingdom:Plantae")
-- `start` (number): Starting index for pagination
-- `rows` (number): Number of results to return
-- `sort` (string): Sort order
-- `fields` (array): Specific fields to return
-- `filters` (object): Additional filters
-
 #### 2. `search_by_scientific_name`
 Search for organisms by scientific name.
 
-**Parameters:**
-- `name` (string, required): Scientific name to search for
-- `rows` (number): Number of results to return
-- `start` (number): Starting index for pagination
+#### 3. `search_by_common_name`
+Search for organisms by their everyday common names (e.g., "dog", "elephant"). This is usually what lay users want when they ask about an animal or plant.
 
-#### 3. `search_by_tsn`
+#### 4. `search_by_tsn`
 Search by Taxonomic Serial Number.  
 
-**Parameters:**
-- `tsn` (string, required): TSN to search for
-
-#### 4. `search_by_kingdom`
+#### 5. `search_by_kingdom`
 Search within a specific kingdom.
 
-**Parameters:**
-- `kingdom` (string, required): Kingdom name (e.g., "Animalia", "Plantae")
-- `rows` (number): Number of results to return
-- `start` (number): Starting index for pagination
-
-#### 5. `search_by_rank`
+#### 6. `search_by_rank`
 Search by taxonomic rank.
 
-**Parameters:**
-- `rank` (string, required): Taxonomic rank (e.g., "Species", "Genus", "Family")
-- `rows` (number): Number of results to return
-- `start` (number): Starting index for pagination
-
-#### 6. `get_hierarchy`
+#### 7. `get_hierarchy`
 Get taxonomic hierarchy for a TSN.
-
-**Parameters:**
-- `tsn` (string, required): TSN to get hierarchy for
-
-#### 7. `search_by_vernacular_name`
-Search for organisms by their common/vernacular names.
-
-**Parameters:**
-- `vernacularName` (string, required): Common/vernacular name to search for
-- `rows` (number): Number of results to return
-- `start` (number): Starting index for pagination
 
 #### 8. `autocomplete_search`
 Autocomplete search for partial names.
 
-**Parameters:**
-- `partialName` (string, required): Partial scientific name
-- `rows` (number): Number of results to return
-
 #### 9. `get_random_species`
 Get random species with optional taxonomic filters.
 
-**Parameters:**
-- `kingdom` (string): Kingdom filter (e.g., "Animalia", "Plantae")
-- `class` (string): Class filter (e.g., "Mammalia", "Aves")
-- `family` (string): Family filter
-- `count` (number): Number of species to return (max: 10)
-- `requireVernacular` (boolean): Only return species with common names
+#### 10. `find_relatives`
+Show relatives of a specific animal or plant. Accepts common or scientific names.
 
-**Note:** This tool is designed to work with the `random_creature_discovery` prompt, which intelligently interprets free-form requests like "big cats" or "sea birds" and determines the appropriate taxonomic filters.
+#### 11. `get_children`
+Find all species contained within a larger taxonomic group (e.g., "Felidae").
 
-#### 10. `get_statistics`
+#### 12. `get_geographic_info`
+Find out where an organism lives (geographic divisions). Accepts common or scientific names.
+
+#### 13. `get_full_species_profile`
+Get a comprehensive profile including hierarchy, geography, and synonyms in one go.
+
+#### 14. `explore_taxonomy`
+Explore taxonomic relationships by finding related organisms at different taxonomic levels.
+
+#### 15. `get_statistics`
 Get database statistics.
-
-**Parameters:** None
 
 ## Example Queries
 

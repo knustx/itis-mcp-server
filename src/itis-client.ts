@@ -93,6 +93,13 @@ export function processVernacularNames(vernacularArray: string[] = [], preferred
 
 export class ITISClient {
   private baseUrl = 'https://services.itis.gov/';
+  public language: string = 'English';
+
+  constructor(language?: string) {
+    if (language) {
+      this.language = language;
+    }
+  }
 
   async search(options: ITISSearchOptions = {}): Promise<ITISResponse> {
     const params = new URLSearchParams();
@@ -328,6 +335,112 @@ export class ITISClient {
       query: '*:*',
       rows: 0,
       fields: ['tsn']
+    });
+  }
+
+  // --- JSON Web Services Methods ---
+  
+  private jsonWsUrl = 'https://www.itis.gov/ITISWebService/jsonservice/';
+
+  private async fetchJsonWs(endpoint: string, params: Record<string, string>): Promise<any> {
+    const urlParams = new URLSearchParams(params);
+    const url = `${this.jsonWsUrl}${endpoint}?${urlParams.toString()}`;
+    
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Failed to fetch from ITIS JSON Web Service: ${error}`);
+    }
+  }
+
+  async getGeographicDivisions(tsn: string): Promise<any> {
+    return this.fetchJsonWs('getGeographicDivisionsFromTSN', { tsn });
+  }
+
+  async getCommonNames(tsn: string): Promise<any> {
+    return this.fetchJsonWs('getCommonNamesFromTSN', { tsn });
+  }
+
+  async getFullHierarchyFromTSN(tsn: string): Promise<any> {
+    return this.fetchJsonWs('getFullHierarchyFromTSN', { tsn });
+  }
+
+  async getSynonyms(tsn: string): Promise<any> {
+    return this.fetchJsonWs('getSynonymNamesFromTSN', { tsn });
+  }
+
+  async getFullRecord(tsn: string): Promise<any> {
+    return this.fetchJsonWs('getFullRecordFromTSN', { tsn });
+  }
+
+  /**
+   * Smart resolver that tries to find an organism by common name first, 
+   * then falls back to scientific name.
+   */
+  async resolveNameToTSN(name: string): Promise<{tsn: string, name: string, record: any} | null> {
+    // Try vernacular first (often what lay users type)
+    const vernacularResult = await this.searchByVernacularName(name, { rows: 1 });
+    if (vernacularResult.response.numFound > 0) {
+      const doc = vernacularResult.response.docs[0];
+      return { tsn: doc.tsn, name: doc.nameWInd, record: doc };
+    }
+
+    // Try scientific name exact match
+    const scientificResult = await this.searchByScientificName(name, { rows: 1 });
+    if (scientificResult.response.numFound > 0) {
+      const doc = scientificResult.response.docs[0];
+      return { tsn: doc.tsn, name: doc.nameWInd, record: doc };
+    }
+
+    // Try autocomplete/partial match as last resort
+    const partialResult = await this.searchWithAutocomplete(name, { rows: 1 });
+    if (partialResult.response.numFound > 0) {
+      const doc = partialResult.response.docs[0];
+      return { tsn: doc.tsn, name: doc.nameWInd, record: doc };
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds all child species of a given higher taxonomic group
+   */
+  async getChildSpecies(taxonomicGroup: string, options: { rows?: number, start?: number } = {}): Promise<ITISResponse> {
+    // First, resolve the group name to ensure we have exactly what it is
+    const groupResult = await this.searchByScientificName(taxonomicGroup);
+    
+    if (groupResult.response.numFound === 0) {
+      // Try treating it as a vernacular name
+      const vernacularGroup = await this.searchByVernacularName(taxonomicGroup, { rows: 1 });
+      if (vernacularGroup.response.numFound === 0) {
+        throw new Error(`Could not find taxonomic group: ${taxonomicGroup}`);
+      }
+      
+      const doc = vernacularGroup.response.docs[0];
+      // We found a species or something by common name, but we need a higher group
+      // This might be tricky if they typed "cats" and it resolved to the domestic cat
+      // We'll just search using hierarchySoFarWRanks for whatever rank this is
+      return this.search({
+        query: `hierarchySoFarWRanks:*${doc.rank}\\:${doc.nameWInd}* AND rank:Species`,
+        rows: options.rows || 20,
+        start: options.start || 0,
+        sort: 'nameWInd asc'
+      });
+    }
+
+    const groupDoc = groupResult.response.docs[0];
+    const groupRank = groupDoc.rank;
+    const groupScientificName = groupDoc.nameWInd;
+
+    return this.search({
+      query: `hierarchySoFarWRanks:*${groupRank}\\:${groupScientificName}* AND rank:Species`,
+      rows: options.rows || 20,
+      start: options.start || 0,
+      sort: 'nameWInd asc'
     });
   }
 }

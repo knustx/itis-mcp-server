@@ -1,6 +1,6 @@
-# WARP.md
+# AGENTS.md
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+This file provides guidance to AI coding assistants (like Cline, Windsurf, Copilot) when working with code in this repository.
 
 ## Project Overview
 
@@ -68,7 +68,8 @@ node examples/test-client.js
 ### Available MCP Tools
 - `search_itis` - General SOLR search with flexible parameters
 - `search_by_scientific_name` - Search by exact scientific name
-- `search_by_vernacular_name` - Search by common/vernacular names
+- `search_by_common_name` - Search by common/vernacular names (user-friendly)
+- `search_by_vernacular_name` - Search by common/vernacular names (legacy alias)
 - `search_by_tsn` - Search by Taxonomic Serial Number
 - `search_by_kingdom` - Search within specific kingdoms (Animalia, Plantae, etc.)
 - `search_by_rank` - Search by taxonomic rank (Species, Genus, Family, etc.)
@@ -77,6 +78,10 @@ node examples/test-client.js
 - `get_statistics` - Database statistics
 - `explore_taxonomy` - Find related organisms at different taxonomic levels (includes vernacular names)
 - `get_random_species` - Get random species with flexible taxonomic filters
+- `find_relatives` - Find relatives of any organism by common or scientific name (e.g. "Elephant")
+- `get_children` - Find all species contained within a larger taxonomic group (e.g. "Felidae")
+- `get_geographic_info` - Find out where an organism lives (geographic divisions)
+- `get_full_species_profile` - Get a comprehensive profile (hierarchy, geography, synonyms) for any organism
 
 ## Key Technologies and Dependencies
 

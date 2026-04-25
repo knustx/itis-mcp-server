@@ -5,7 +5,7 @@
  * This demonstrates how to use the server programmatically
  */
 
-import { ITISClient } from '../dist/itis-client.js';
+import { ITISClient, processVernacularNames } from '../dist/itis-client.js';
 
 async function runTests() {
   const client = new ITISClient();
@@ -78,7 +78,8 @@ async function runTests() {
     vernacularResult.response.docs.forEach(doc => {
       console.log(`   - ${doc.nameWInd} (TSN: ${doc.tsn})`);
       if (doc.vernacular && doc.vernacular.length > 0) {
-        console.log(`     Common names: ${doc.vernacular.join(', ')}`);
+        const commonNames = processVernacularNames(doc.vernacular);
+        console.log(`     Common names: ${commonNames.join(', ')}`);
       }
     });
     console.log('');
@@ -107,8 +108,8 @@ async function runTests() {
       const bird = randomBird.response.docs[0];
       console.log(`   Random bird: ${bird.nameWInd} (TSN: ${bird.tsn})`);
       if (bird.vernacular && bird.vernacular.length > 0) {
-        const firstCommon = bird.vernacular[0].split('$')[1] || 'N/A';
-        console.log(`   Common name: ${firstCommon}`);
+        const commonNames = processVernacularNames(bird.vernacular);
+        console.log(`   Common name: ${commonNames.length > 0 ? commonNames[0] : 'N/A'}`);
       }
     }
     console.log('');
@@ -125,12 +126,41 @@ async function runTests() {
     randomPlants.response.docs.forEach(plant => {
       console.log(`   - ${plant.nameWInd} (TSN: ${plant.tsn})`);
       if (plant.vernacular && plant.vernacular.length > 0) {
-        const firstCommon = plant.vernacular[0].split('$')[1] || 'N/A';
-        console.log(`     Common name: ${firstCommon}`);
+        const commonNames = processVernacularNames(plant.vernacular);
+        console.log(`     Common name: ${commonNames.length > 0 ? commonNames[0] : 'N/A'}`);
       }
     });
     
-    console.log('\\n✅ All tests completed successfully!');
+    // Test 11: JSON Web Service - Geographic Divisions
+    console.log('11. Getting geographic info for polar bear (TSN 180816)...');
+    const geoInfo = await client.getGeographicDivisions('180816');
+    if (geoInfo && geoInfo.geographicDivisions) {
+      console.log(`   Found ${geoInfo.geographicDivisions.length} geographic divisions:`);
+      geoInfo.geographicDivisions.forEach(geo => {
+        console.log(`   - ${geo.geographicValue}`);
+      });
+    }
+    console.log('');
+    
+    // Test 12: Smart Resolver
+    console.log('12. Resolving common name "komodo dragon"...');
+    const resolved = await client.resolveNameToTSN('komodo dragon');
+    if (resolved) {
+      console.log(`   Resolved to: ${resolved.name} (TSN: ${resolved.tsn})`);
+    } else {
+      console.log('   Could not resolve name.');
+    }
+    console.log('');
+
+    // Test 13: Get Child Species
+    console.log('13. Getting child species for Felidae (cat family)...');
+    const cats = await client.getChildSpecies('Felidae', { rows: 3 });
+    console.log(`   Found ${cats.response.numFound} species in Felidae. First 3:`);
+    cats.response.docs.forEach(cat => {
+      console.log(`   - ${cat.nameWInd} (TSN: ${cat.tsn})`);
+    });
+
+    console.log('\n✅ All tests completed successfully!');
     
   } catch (error) {
     console.error('❌ Error during testing:', error.message);

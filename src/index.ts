@@ -16,7 +16,15 @@ const server = new Server({
   }
 });
 
-const itisClient = new ITISClient();
+// Parse command line arguments
+const args = process.argv.slice(2);
+let language = 'English';
+const langArg = args.find(a => a.startsWith('--language='));
+if (langArg) {
+  language = langArg.split('=')[1];
+}
+
+const itisClient = new ITISClient(language);
 
 // Setup handlers
 setupToolHandlers(server, itisClient);
